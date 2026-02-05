@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#111827"/>
+  <!-- App icon for Android “Add to Home Screen” -->
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-192.png">
+
+<!-- PWA manifest (controls the homescreen icon + name) -->
+<link rel="manifest" href="./manifest.webmanifest">
+
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <title>Communication Theories (EN/FR)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #0b1220; color: #e5e7eb; }
+    header { position: sticky; top: 0; background: rgba(11,18,32,.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,.08); z-index: 10; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 14px; }
+    h1 { margin: 8px 0 10px; font-size: 18px; font-weight: 700; letter-spacing: .2px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input, select, textarea, button {
+      background: #111827; color: #e5e7eb; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px; padding: 10px 12px; font-size: 14px;
+    }
+    input::placeholder, textarea::placeholder { color: #9ca3af; }
+    input, select { height: 40px; }
+    textarea { width: 100%; min-height: 84px; resize: vertical; }
+    button { cursor: pointer; }
+    button.primary { background: #2563eb; border-color: rgba(255,255,255,.12); }
+    button.ghost { background: transparent; }
+    .stats { margin-top: 10px; color: #9ca3af; font-size: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 820px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .card {
+      background: #0f172a; border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px; padding: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+    .title { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+    .title h2 { margin: 0; font-size: 15px; }
+    .pillrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .pill { font-size: 11px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; }
+    .muted { color: #9ca3af; font-size: 12px; margin-top: 6px; line-height: 1.35; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .danger { border-color: rgba(239,68,68,.35); color: #fecaca; }
+    .ok { border-color: rgba(34,197,94,.35); color: #bbf7d0; }
+    .divider { height: 1px; background: rgba(255,255,255,.08); margin: 12px 0; }
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      display: none; align-items: center; justify-content: center; padding: 14px; z-index: 50;
+    }
+    .modal.open { display: flex; }
+    .modalbox {
+      width: min(820px, 100%); max-height: 88vh; overflow: auto;
+      background: #0b1220; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px; padding: 14px;
+    }
+    .two { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 820px) { .two { grid-template-columns: 1fr 1fr; } }
+    label { font-size: 12px; color: #9ca3af; display:block; margin: 6px 0 4px; }
+    .topbar { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    .small { font-size: 12px; color: #9ca3af; }
+    .toast {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      background: #111827; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px; padding: 10px 14px; color:#e5e7eb; display:none;
+    }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1 id="appTitle">Communication Theories (EN/FR)</h1>
+        <div class="small" id="subtitle">Offline library • 50 theories • Search • Filters • Add/Edit</div>
+      </div>
+      <div class="row">
+        <select id="lang">
+          <option value="en">EN</option>
+          <option value="fr">FR</option>
+        </select>
+        <button class="ghost ok" id="btnExport">Export JSON</button>
+        <button class="ghost" id="btnImport">Import JSON</button>
+        <button class="ghost danger" id="btnReset">Reset (restore 50)</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <input id="q" style="flex:1; min-width: 220px;" placeholder="Search by name, scholars, definition..." />
+      <select id="level">
+        <option value="">All levels</option>
+        <option>Intrapersonal</option>
+        <option>Interpersonal</option>
+        <option>Group</option>
+        <option>Organizational</option>
+        <option>Mass</option>
+        <option>Digital</option>
+      </select>
+      <select id="tradition">
+        <option value="">All traditions</option>
+        <option>Socio-psychological</option>
+        <option>Cybernetic</option>
+        <option>Rhetorical</option>
+        <option>Socio-cultural</option>
+        <option>Critical</option>
+        <option>Phenomenological</option>
+        <option>Semiotic</option>
+      </select>
+      <button class="primary" id="btnAdd">+ Add Theory</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid" id="list"></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modalbox">
+    <div class="topbar">
+      <div>
+        <h2 id="modalTitle" style="margin:0; font-size:16px;">Add/Edit Theory</h2>
+        <div class="small" id="modalHint">Fill bilingual fields (EN/FR). Saved offline.</div>
+      </div>
+      <div class="row">
+        <button class="ghost" id="btnClose">Close</button>
+        <button class="primary" id="btnSave">Save</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="two">
+      <div>
+        <label>Name (EN)</label>
+        <input id="name_en" placeholder="e.g., Agenda-Setting Theory" style="width:100%;" />
+        <label>Definition (EN)</label>
+        <textarea id="def_en" placeholder="1–2 lines: what it explains and how."></textarea>
+      </div>
+      <div>
+        <label>Nom (FR)</label>
+        <input id="name_fr" placeholder="ex : Théorie de l’agenda-setting" style="width:100%;" />
+        <label>Définition (FR)</label>
+        <textarea id="def_fr" placeholder="1–2 lignes : ce que la théorie explique et comment."></textarea>
+      </div>
+    </div>
+
+    <div class="two">
+      <div>
+        <label>Scholars (comma-separated)</label>
+        <input id="scholars" placeholder="e.g., McCombs, Shaw" style="width:100%;" />
+      </div>
+      <div>
+        <label>Keywords (comma-separated)</label>
+        <input id="keywords" placeholder="e.g., salience, media effects" style="width:100%;" />
+      </div>
+    </div>
+
+    <div class="two">
+      <div>
+        <label>Level</label>
+        <select id="levelEdit" style="width:100%;">
+          <option>Intrapersonal</option>
+          <option>Interpersonal</option>
+          <option>Group</option>
+          <option>Organizational</option>
+          <option>Mass</option>
+          <option>Digital</option>
+        </select>
+      </div>
+      <div>
+        <label>Tradition</label>
+        <select id="traditionEdit" style="width:100%;">
+          <option>Socio-psychological</option>
+          <option>Cybernetic</option>
+          <option>Rhetorical</option>
+          <option>Socio-cultural</option>
+          <option>Critical</option>
+          <option>Phenomenological</option>
+          <option>Semiotic</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Notes (optional)</label>
+    <textarea id="notes" placeholder="Your notes: how you’ll use it in a paper, critiques, examples..."></textarea>
+
+    <div class="divider"></div>
+    <div class="small">Tip: Export JSON to back up your library. Import JSON to restore on another phone.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Data: 50 theories (bilingual, concise) ---------- */
+const SEED = [
+  {id:"t01", name_en:"Agenda-Setting Theory", name_fr:"Théorie de l’agenda-setting", def_en:"Media influence what people think about by making issues more salient.", def_fr:"Les médias influencent les sujets auxquels le public accorde de l’importance (saillance).", level:"Mass", tradition:"Socio-psychological", scholars:"Maxwell McCombs, Donald Shaw", keywords:"salience, media effects"},
+  {id:"t02", name_en:"Framing Theory", name_fr:"Théorie du cadrage", def_en:"How an issue is presented shapes interpretation and judgment.", def_fr:"La manière de présenter un sujet oriente son interprétation et l’évaluation.", level:"Mass", tradition:"Socio-psychological", scholars:"Erving Goffman, Robert Entman", keywords:"frames, interpretation"},
+  {id:"t03", name_en:"Cultivation Theory", name_fr:"Théorie de la cultivation", def_en:"Long-term media exposure can shape perceptions of reality.", def_fr:"L’exposition prolongée aux médias peut façonner la perception de la réalité.", level:"Mass", tradition:"Socio-psychological", scholars:"George Gerbner", keywords:"television, worldview"},
+  {id:"t04", name_en:"Uses and Gratifications", name_fr:"Usages et gratifications", def_en:"Audiences actively choose media to satisfy needs (information, identity, entertainment).", def_fr:"Les publics choisissent activement les médias pour répondre à des besoins.", level:"Mass", tradition:"Socio-psychological", scholars:"Elihu Katz, Jay Blumler, Michael Gurevitch", keywords:"needs, active audience"},
+  {id:"t05", name_en:"Spiral of Silence", name_fr:"Spirale du silence", def_en:"People may hide minority opinions to avoid isolation, amplifying dominant views.", def_fr:"La peur de l’isolement pousse à taire des opinions minoritaires.", level:"Mass", tradition:"Socio-psychological", scholars:"Elisabeth Noelle-Neumann", keywords:"public opinion, silence"},
+  {id:"t06", name_en:"Diffusion of Innovations", name_fr:"Diffusion des innovations", def_en:"Innovations spread through social systems over time via communication channels.", def_fr:"Les innovations se propagent dans un système social via des canaux de communication.", level:"Organizational", tradition:"Socio-psychological", scholars:"Everett Rogers", keywords:"adoption, innovation"},
+  {id:"t07", name_en:"Two-Step Flow", name_fr:"Modèle du double flux", def_en:"Media influence often flows through opinion leaders to others.", def_fr:"L’influence des médias passe souvent par des leaders d’opinion.", level:"Mass", tradition:"Socio-psychological", scholars:"Paul Lazarsfeld, Elihu Katz", keywords:"opinion leaders, influence"},
+  {id:"t08", name_en:"Elaboration Likelihood Model (ELM)", name_fr:"Modèle de la probabilité d’élaboration", def_en:"Persuasion follows central vs peripheral processing depending on motivation and ability.", def_fr:"La persuasion suit une voie centrale ou périphérique selon motivation et capacité.", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Richard Petty, John Cacioppo", keywords:"persuasion, attitudes"},
+  {id:"t09", name_en:"Social Judgment Theory", name_fr:"Théorie du jugement social", def_en:"Persuasion depends on latitudes of acceptance, rejection, and noncommitment.", def_fr:"La persuasion dépend des zones d’acceptation, de rejet et de neutralité.", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Muzafer Sherif, Carl Hovland", keywords:"attitudes, anchor"},
+  {id:"t10", name_en:"Cognitive Dissonance", name_fr:"Dissonance cognitive", def_en:"Inconsistency between beliefs and actions creates discomfort that people try to reduce.", def_fr:"L’incohérence croyances–actions crée un malaise que l’on cherche à réduire.", level:"Intrapersonal", tradition:"Socio-psychological", scholars:"Leon Festinger", keywords:"inconsistency, rationalization"},
+  {id:"t11", name_en:"Social Learning Theory", name_fr:"Théorie de l’apprentissage social", def_en:"People learn behaviors by observing others and outcomes (modeling).", def_fr:"On apprend en observant les autres et les conséquences (modelage).", level:"Intrapersonal", tradition:"Socio-psychological", scholars:"Albert Bandura", keywords:"modeling, observation"},
+  {id:"t12", name_en:"Social Cognitive Theory (Media)", name_fr:"Théorie sociocognitive (médias)", def_en:"Media can shape self-efficacy and expected outcomes, guiding behavior.", def_fr:"Les médias influencent l’auto-efficacité et les attentes, orientant l’action.", level:"Mass", tradition:"Socio-psychological", scholars:"Albert Bandura", keywords:"self-efficacy, outcomes"},
+  {id:"t13", name_en:"Social Identity Theory", name_fr:"Théorie de l’identité sociale", def_en:"Group memberships shape self-concept, in-group bias, and intergroup behavior.", def_fr:"L’appartenance de groupe structure l’identité et les biais intergroupes.", level:"Group", tradition:"Socio-psychological", scholars:"Henri Tajfel, John Turner", keywords:"in-group, out-group"},
+  {id:"t14", name_en:"Communication Accommodation Theory", name_fr:"Théorie de l’accommodation communicationnelle", def_en:"People converge or diverge in speech to manage social distance and identity.", def_fr:"On ajuste son langage (convergence/divergence) pour gérer distance et identité.", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Howard Giles", keywords:"convergence, divergence"},
+  {id:"t15", name_en:"Uncertainty Reduction Theory", name_fr:"Théorie de la réduction de l’incertitude", def_en:"In early interactions, people seek information to reduce uncertainty.", def_fr:"Au début des relations, on cherche de l’information pour réduire l’incertitude.", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Charles Berger, Richard Calabrese", keywords:"information seeking"},
+  {id:"t16", name_en:"Social Penetration Theory", name_fr:"Théorie de la pénétration sociale", def_en:"Relationships deepen through gradual self-disclosure (breadth and depth).", def_fr:"Les relations se développent via une auto-divulgation progressive (étendue/profondeur).", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Irwin Altman, Dalmas Taylor", keywords:"self-disclosure"},
+  {id:"t17", name_en:"Expectancy Violations Theory", name_fr:"Théorie des violations d’attentes", def_en:"Unexpected behavior is evaluated as positive or negative depending on context and reward value.", def_fr:"Une conduite inattendue est jugée selon le contexte et la valeur relationnelle.", level:"Interpersonal", tradition:"Socio-psychological", scholars:"Judee Burgoon", keywords:"expectations, nonverbal"},
+  {id:"t18", name_en:"Politeness Theory", name_fr:"Théorie de la politesse", def_en:"People manage “face” through strategies that reduce threat in interaction.", def_fr:"On protège la “face” par des stratégies réduisant les menaces interactionnelles.", level:"Interpersonal", tradition:"Socio-cultural", scholars:"Penelope Brown, Stephen Levinson", keywords:"face, mitigation"},
+  {id:"t19", name_en:"Face-Negotiation Theory", name_fr:"Théorie de la négociation de la face", def_en:"Culture shapes how people manage face and conflict styles.", def_fr:"La culture influence la gestion de la face et les styles de conflit.", level:"Interpersonal", tradition:"Socio-cultural", scholars:"Stella Ting-Toomey", keywords:"culture, conflict"},
+  {id:"t20", name_en:"Symbolic Interactionism", name_fr:"Interactionnisme symbolique", def_en:"Meaning arises through social interaction and shared symbols.", def_fr:"Le sens se construit dans l’interaction sociale via des symboles partagés.", level:"Interpersonal", tradition:"Socio-cultural", scholars:"George H. Mead, Herbert Blumer", keywords:"meaning, symbols"},
+  {id:"t21", name_en:"Coordinated Management of Meaning (CMM)", name_fr:"Gestion coordonnée du sens (CMM)", def_en:"People co-create social realities through rules and stories in communication.", def_fr:"La communication co-produit la réalité sociale via règles et récits.", level:"Interpersonal", tradition:"Cybernetic", scholars:"W. Barnett Pearce, Vernon Cronen", keywords:"coordination, stories"},
+  {id:"t22", name_en:"Systems Theory (Communication)", name_fr:"Théorie des systèmes (communication)", def_en:"Communication patterns maintain and change systems through feedback and interdependence.", def_fr:"Les schémas communicatifs régulent les systèmes via rétroaction et interdépendance.", level:"Organizational", tradition:"Cybernetic", scholars:"Ludwig von Bertalanffy (influence), Gregory Bateson (influence)", keywords:"feedback, interdependence"},
+  {id:"t23", name_en:"Cybernetics / Feedback Theory", name_fr:"Cybernétique / théorie de la rétroaction", def_en:"Feedback loops regulate behavior and stability in communication systems.", def_fr:"Les boucles de rétroaction régulent comportement et stabilité des systèmes.", level:"Organizational", tradition:"Cybernetic", scholars:"Norbert Wiener (influence)", keywords:"feedback loops, control"},
+  {id:"t24", name_en:"Information Theory", name_fr:"Théorie de l’information", def_en:"Communication can be analyzed as signals, noise, and channel capacity.", def_fr:"La communication s’analyse en signaux, bruit et capacité du canal.", level:"Mass", tradition:"Cybernetic", scholars:"Claude Shannon, Warren Weaver", keywords:"signal, noise"},
+  {id:"t25", name_en:"Media Richness Theory", name_fr:"Théorie de la richesse des médias", def_en:"Media differ in richness; complex tasks benefit from richer channels.", def_fr:"Les médias varient en “richesse”; les tâches ambiguës exigent des canaux riches.", level:"Organizational", tradition:"Cybernetic", scholars:"Richard Daft, Robert Lengel", keywords:"ambiguity, channel"},
+  {id:"t26", name_en:"Social Presence Theory", name_fr:"Théorie de la présence sociale", def_en:"Communication media vary in perceived intimacy and immediacy.", def_fr:"Les médias diffèrent par l’intimité et l’immédiateté perçues.", level:"Digital", tradition:"Cybernetic", scholars:"John Short, Ederyn Williams, Bruce Christie", keywords:"immediacy, intimacy"},
+  {id:"t27", name_en:"Computer-Mediated Communication (CMC) - Hyperpersonal Model", name_fr:"CMC - Modèle hyperpersonnel", def_en:"Online interaction can become unusually intimate due to selective self-presentation and feedback.", def_fr:"En ligne, l’intimité peut s’intensifier via présentation sélective et boucles de feedback.", level:"Digital", tradition:"Cybernetic", scholars:"Joseph Walther", keywords:"online, intimacy"},
+  {id:"t28", name_en:"Media Dependency Theory", name_fr:"Théorie de la dépendance aux médias", def_en:"Media influence grows when people depend on them to meet goals, especially during uncertainty.", def_fr:"L’influence des médias augmente quand on en dépend pour atteindre des objectifs, surtout en crise.", level:"Mass", tradition:"Socio-psychological", scholars:"Sandra Ball-Rokeach, Melvin DeFleur", keywords:"dependency, crisis"},
+  {id:"t29", name_en:"Gatekeeping Theory", name_fr:"Théorie du gatekeeping", def_en:"Information is shaped by selection and filtering processes in institutions and platforms.", def_fr:"L’information est modelée par des processus de sélection/filtrage (médias, plateformes).", level:"Mass", tradition:"Socio-cultural", scholars:"Kurt Lewin (influence), David White", keywords:"selection, filtering"},
+  {id:"t30", name_en:"Public Sphere", name_fr:"Espace public", def_en:"Democratic debate depends on accessible spaces for rational-critical discussion.", def_fr:"La démocratie requiert des espaces accessibles de discussion critique et argumentée.", level:"Mass", tradition:"Critical", scholars:"Jürgen Habermas", keywords:"democracy, deliberation"},
+  {id:"t31", name_en:"Critical Theory (Media/Communication)", name_fr:"Théorie critique (médias/communication)", def_en:"Communication can reproduce power; critique reveals ideology and domination.", def_fr:"La communication peut reproduire le pouvoir; la critique dévoile idéologie et domination.", level:"Mass", tradition:"Critical", scholars:"Frankfurt School (Horkheimer, Adorno), later scholars", keywords:"ideology, power"},
+  {id:"t32", name_en:"Cultural Studies (Encoding/Decoding)", name_fr:"Cultural Studies (encodage/décodage)", def_en:"Audiences interpret media texts differently (dominant, negotiated, oppositional readings).", def_fr:"Les publics décodent différemment les messages (dominant, négocié, oppositionnel).", level:"Mass", tradition:"Critical", scholars:"Stuart Hall", keywords:"interpretation, audience"},
+  {id:"t33", name_en:"Feminist Communication Theory", name_fr:"Théorie féministe de la communication", def_en:"Examines how gender and power shape discourse, representation, and interaction.", def_fr:"Analyse comment genre et pouvoir structurent discours, représentations et interactions.", level:"Interpersonal", tradition:"Critical", scholars:"Various feminist scholars", keywords:"gender, power"},
+  {id:"t34", name_en:"Postcolonial Theory (Communication)", name_fr:"Théorie postcoloniale (communication)", def_en:"Explores how colonial histories shape narratives, identity, and global media power.", def_fr:"Étudie l’impact des héritages coloniaux sur récits, identités et pouvoir médiatique.", level:"Mass", tradition:"Critical", scholars:"Edward Said (influence), Homi Bhabha, Gayatri Spivak", keywords:"colonialism, discourse"},
+  {id:"t35", name_en:"Narrative Paradigm", name_fr:"Paradigme narratif", def_en:"Humans are storytellers; persuasion depends on narrative coherence and fidelity.", def_fr:"Nous sommes des conteurs; la persuasion dépend de la cohérence et fidélité du récit.", level:"Interpersonal", tradition:"Rhetorical", scholars:"Walter Fisher", keywords:"story, persuasion"},
+  {id:"t36", name_en:"Rhetorical Situation", name_fr:"Situation rhétorique", def_en:"Persuasion responds to exigence, audience, and constraints.", def_fr:"La persuasion répond à une exigence, un public et des contraintes.", level:"Interpersonal", tradition:"Rhetorical", scholars:"Lloyd Bitzer", keywords:"exigence, audience"},
+  {id:"t37", name_en:"Dramatism", name_fr:"Dramatisme", def_en:"Communication can be analyzed as drama (act, scene, agent, agency, purpose).", def_fr:"La communication s’analyse comme un drame (acte, scène, agent, moyens, but).", level:"Interpersonal", tradition:"Rhetorical", scholars:"Kenneth Burke", keywords:"pentad, motives"},
+  {id:"t38", name_en:"Semiotics", name_fr:"Sémiotique", def_en:"Meaning arises from signs (signifier/signified) and codes in culture.", def_fr:"Le sens vient des signes (signifiant/signifié) et des codes culturels.", level:"Mass", tradition:"Semiotic", scholars:"Ferdinand de Saussure, Roland Barthes, Charles Peirce", keywords:"signs, codes"},
+  {id:"t39", name_en:"Speech Act Theory", name_fr:"Théorie des actes de langage", def_en:"Utterances do things (promising, ordering); meaning includes intent and effect.", def_fr:"Dire, c’est agir (promettre, ordonner) : sens = intention + effet.", level:"Interpersonal", tradition:"Semiotic", scholars:"J.L. Austin, John Searle", keywords:"illocution, perlocution"},
+  {id:"t40", name_en:"Ethnomethodology", name_fr:"Ethnométhodologie", def_en:"Everyday talk uses methods to produce social order and shared understanding.", def_fr:"Les échanges ordinaires produisent l’ordre social par des “méthodes” pratiques.", level:"Interpersonal", tradition:"Phenomenological", scholars:"Harold Garfinkel", keywords:"interaction order"},
+  {id:"t41", name_en:"Phenomenology (Communication)", name_fr:"Phénoménologie (communication)", def_en:"Focuses on lived experience and how meaning appears in consciousness and relation.", def_fr:"S’intéresse à l’expérience vécue et à l’apparition du sens dans la relation.", level:"Intrapersonal", tradition:"Phenomenological", scholars:"Edmund Husserl (influence), Maurice Merleau-Ponty (influence)", keywords:"lived experience"},
+  {id:"t42", name_en:"Relational Dialectics Theory", name_fr:"Théorie des dialectiques relationnelles", def_en:"Relationships contain ongoing tensions (openness/closedness, autonomy/connection).", def_fr:"Les relations comportent des tensions continues (ouverture/fermeture, autonomie/lien).", level:"Interpersonal", tradition:"Socio-cultural", scholars:"Leslie Baxter, Barbara Montgomery", keywords:"tensions, dialogue"},
+  {id:"t43", name_en:"Communication Privacy Management (CPM)", name_fr:"Gestion de la vie privée (CPM)", def_en:"People manage private information through boundaries and rules; breaches create turbulence.", def_fr:"On gère l’information privée par frontières/règles; les violations créent une turbulence.", level:"Interpersonal", tradition:"Socio-cultural", scholars:"Sandra Petronio", keywords:"privacy, boundaries"},
+  {id:"t44", name_en:"Family Communication Patterns Theory", name_fr:"Théorie des patterns de communication familiale", def_en:"Families differ on conversation and conformity orientations, shaping outcomes.", def_fr:"Les familles varient en orientation conversationnelle et conformiste, influençant les effets.", level:"Group", tradition:"Socio-cultural", scholars:"Mary Anne Fitzpatrick, Ritchie", keywords:"family, conformity"},
+  {id:"t45", name_en:"Groupthink", name_fr:"Pensée de groupe", def_en:"Highly cohesive groups may seek consensus, reducing critical evaluation and risking poor decisions.", def_fr:"Des groupes très cohésifs peuvent privilégier le consensus au détriment de l’esprit critique.", level:"Group", tradition:"Socio-psychological", scholars:"Irving Janis", keywords:"decision-making, cohesion"},
+  {id:"t46", name_en:"Standpoint Theory", name_fr:"Théorie du point de vue", def_en:"Knowledge is shaped by social position; marginalized standpoints can reveal hidden power.", def_fr:"Le savoir dépend de la position sociale; les marges révèlent des rapports de pouvoir.", level:"Interpersonal", tradition:"Critical", scholars:"Nancy Hartsock, Sandra Harding (influence)", keywords:"position, power"},
+  {id:"t47", name_en:"Structuration Theory (Org/Comm)", name_fr:"Théorie de la structuration (org/comm)", def_en:"Structures shape action, and action reproduces/changes structures (duality).", def_fr:"Les structures orientent l’action, et l’action reproduit/transforme les structures (dualité).", level:"Organizational", tradition:"Socio-cultural", scholars:"Anthony Giddens (influence)", keywords:"duality, structure"},
+  {id:"t48", name_en:"Organizational Culture Theory", name_fr:"Théorie de la culture organisationnelle", def_en:"Organizations are cultures built through symbols, rituals, stories, and shared meaning.", def_fr:"Les organisations sont des cultures faites de symboles, rituels, récits et sens partagés.", level:"Organizational", tradition:"Socio-cultural", scholars:"Edgar Schein (influence), Pacanowsky & O’Donnell-Trujillo", keywords:"symbols, rituals"},
+  {id:"t49", name_en:"Critical Discourse Analysis (CDA)", name_fr:"Analyse critique du discours (ACD)", def_en:"Studies how discourse constructs power, ideology, and inequality in texts and talk.", def_fr:"Étudie comment le discours construit pouvoir, idéologie et inégalités.", level:"Mass", tradition:"Critical", scholars:"Norman Fairclough, Teun van Dijk, Ruth Wodak", keywords:"discourse, ideology"},
+  {id:"t50", name_en:"Network Society / Networked Publics", name_fr:"Société en réseaux / publics en réseau", def_en:"Digital networks reshape power, participation, and information flows.", def_fr:"Les réseaux numériques transforment pouvoir, participation et circulation de l’information.", level:"Digital", tradition:"Critical", scholars:"Manuel Castells (influence), danah boyd (influence)", keywords:"networks, platforms"}
+];
+
+/* ---------- Storage ---------- */
+const KEY = "ctheories_v1";
+const load = () => {
+  const raw = localStorage.getItem(KEY);
+  if (!raw) return JSON.parse(JSON.stringify(SEED));
+  try { return JSON.parse(raw); } catch { return JSON.parse(JSON.stringify(SEED)); }
+};
+const saveAll = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+
+/* ---------- State ---------- */
+let theories = load();
+let currentId = null;
+let lang = "en";
+
+/* ---------- UI Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const toast = (msg) => {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1600);
+};
+const t = (en, fr) => (lang === "fr" ? fr : en);
+
+function norm(s){ return (s||"").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
+
+function matchesFilter(item){
+  const q = norm($("q").value.trim());
+  const level = $("level").value;
+  const trad = $("tradition").value;
+
+  if (level && item.level !== level) return false;
+  if (trad && item.tradition !== trad) return false;
+
+  if (!q) return true;
+
+  const hay = norm([
+    item.name_en, item.name_fr, item.def_en, item.def_fr,
+    item.scholars, item.keywords, item.level, item.tradition,
+    item.notes||""
+  ].join(" "));
+  return hay.includes(q);
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const filtered = theories.filter(matchesFilter);
+  $("stats").textContent = t(
+    `Showing ${filtered.length} of ${theories.length} theories`,
+    `Affichage ${filtered.length} sur ${theories.length} théories`
+  );
+
+  const list = $("list");
+  list.innerHTML = "";
+
+  filtered.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const name = (lang==="fr" ? item.name_fr : item.name_en) || item.name_en || item.name_fr || "—";
+    const def = (lang==="fr" ? item.def_fr : item.def_en) || item.def_en || item.def_fr || "";
+
+    card.innerHTML = `
+      <div class="title">
+        <div>
+          <h2>${escapeHtml(name)}</h2>
+          <div class="muted">${escapeHtml(def)}</div>
+        </div>
+      </div>
+      <div class="pillrow">
+        <span class="pill">${escapeHtml(item.level)}</span>
+        <span class="pill">${escapeHtml(item.tradition)}</span>
+        ${item.scholars ? `<span class="pill">${escapeHtml(item.scholars)}</span>` : ""}
+      </div>
+      ${item.keywords ? `<div class="muted">${escapeHtml(t("Keywords","Mots-clés"))}: ${escapeHtml(item.keywords)}</div>` : ""}
+      ${item.notes ? `<div class="muted">${escapeHtml(t("Notes","Notes"))}: ${escapeHtml(item.notes)}</div>` : ""}
+      <div class="actions">
+        <button class="ghost ok" data-act="edit" data-id="${item.id}">${t("Edit","Modifier")}</button>
+        <button class="ghost" data-act="copy" data-id="${item.id}">${t("Copy","Copier")}</button>
+        <button class="ghost danger" data-act="del" data-id="${item.id}">${t("Delete","Supprimer")}</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function escapeHtml(str){
+  return (str||"").replace(/[&<>"']/g, (m)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
+
+/* ---------- Modal ---------- */
+function openModal(item){
+  $("modal").classList.add("open");
+  currentId = item?.id || null;
+
+  $("modalTitle").textContent = currentId ? t("Edit Theory","Modifier la théorie") : t("Add Theory","Ajouter une théorie");
+
+  $("name_en").value = item?.name_en || "";
+  $("name_fr").value = item?.name_fr || "";
+  $("def_en").value  = item?.def_en || "";
+  $("def_fr").value  = item?.def_fr || "";
+  $("scholars").value = item?.scholars || "";
+  $("keywords").value = item?.keywords || "";
+  $("levelEdit").value = item?.level || "Mass";
+  $("traditionEdit").value = item?.tradition || "Socio-psychological";
+  $("notes").value = item?.notes || "";
+}
+
+function closeModal(){
+  $("modal").classList.remove("open");
+  currentId = null;
+}
+
+function upsert(){
+  const obj = {
+    id: currentId || ("t" + Math.random().toString(16).slice(2,10)),
+    name_en: $("name_en").value.trim(),
+    name_fr: $("name_fr").value.trim(),
+    def_en: $("def_en").value.trim(),
+    def_fr: $("def_fr").value.trim(),
+    scholars: $("scholars").value.trim(),
+    keywords: $("keywords").value.trim(),
+    level: $("levelEdit").value,
+    tradition: $("traditionEdit").value,
+    notes: $("notes").value.trim()
+  };
+
+  // Minimal validation: require at least one name + one definition
+  if (!(obj.name_en || obj.name_fr) || !(obj.def_en || obj.def_fr)){
+    toast(t("Please add at least a name and a definition.","Ajoutez au moins un nom et une définition."));
+    return;
+  }
+
+  const idx = theories.findIndex(x => x.id === obj.id);
+  if (idx >= 0) theories[idx] = {...theories[idx], ...obj};
+  else theories.unshift(obj);
+
+  saveAll(theories);
+  closeModal();
+  render();
+  toast(t("Saved.","Enregistré."));
+}
+
+/* ---------- Actions ---------- */
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const act = btn.dataset.act;
+  const id = btn.dataset.id;
+
+  if (act === "edit"){
+    const item = theories.find(x => x.id === id);
+    openModal(item);
+  }
+  if (act === "del"){
+    const item = theories.find(x => x.id === id);
+    const ok = confirm(t(
+      `Delete "${item?.name_en || item?.name_fr}"?`,
+      `Supprimer "${item?.name_fr || item?.name_en}" ?`
+    ));
+    if (!ok) return;
+    theories = theories.filter(x => x.id !== id);
+    saveAll(theories);
+    render();
+    toast(t("Deleted.","Supprimé."));
+  }
+  if (act === "copy"){
+    const item = theories.find(x => x.id === id);
+    const name = (lang==="fr" ? item.name_fr : item.name_en) || item.name_en || item.name_fr;
+    const def  = (lang==="fr" ? item.def_fr : item.def_en) || item.def_en || item.def_fr;
+    const text = `${name}\n- ${def}\n- ${t("Level","Niveau")}: ${item.level}\n- ${t("Tradition","Tradition")}: ${item.tradition}\n- ${t("Scholars","Auteurs")}: ${item.scholars || "—"}\n- ${t("Keywords","Mots-clés")}: ${item.keywords || "—"}`;
+    navigator.clipboard?.writeText(text).then(()=>toast(t("Copied.","Copié."))).catch(()=>toast(t("Copy failed.","Copie échouée.")));
+  }
+});
+
+["q","level","tradition"].forEach(id => $(id).addEventListener("input", render));
+
+$("btnAdd").addEventListener("click", ()=>openModal(null));
+$("btnClose").addEventListener("click", closeModal);
+$("btnSave").addEventListener("click", upsert);
+$("modal").addEventListener("click", (e)=>{ if (e.target.id === "modal") closeModal(); });
+
+$("lang").addEventListener("change", ()=>{
+  lang = $("lang").value;
+  document.documentElement.lang = lang;
+  $("subtitle").textContent = t("Offline library • 50 theories • Search • Filters • Add/Edit", "Bibliothèque hors ligne • 50 théories • Recherche • Filtres • Ajouter/Modifier");
+  render();
+});
+
+/* ---------- Export / Import / Reset ---------- */
+$("btnExport").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(theories, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "communication_theories_en_fr.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(t("Exported JSON.","JSON exporté."));
+});
+
+$("btnImport").addEventListener("click", ()=>{
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "application/json";
+  inp.onchange = () => {
+    const file = inp.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result||""));
+        if (!Array.isArray(data)) throw new Error("not array");
+        theories = data;
+        saveAll(theories);
+        render();
+        toast(t("Imported.","Importé."));
+      } catch {
+        toast(t("Invalid file.","Fichier invalide."));
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+});
+
+$("btnReset").addEventListener("click", ()=>{
+  const ok = confirm(t("Restore the original 50 theories? This will overwrite your current list.","Restaurer les 50 théories d’origine ? Cela écrasera votre liste actuelle."));
+  if (!ok) return;
+  theories = JSON.parse(JSON.stringify(SEED));
+  saveAll(theories);
+  render();
+  toast(t("Restored.","Restauré."));
+});
+/* ---------- Initial render ---------- */
+render();
+toast("Ready ✅");
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js");
+  }
+</script>
+</body>
+</html>

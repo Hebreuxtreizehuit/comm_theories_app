@@ -1,0 +1,12 @@
+{
+  "name": "Communication Theories (EN/FR)",
+  "short_name": "CommTheory",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#111827",
+  "icons": [
+    { "src": "./icon-192_com.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512_com.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
